@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Customer Churn Prediction</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap"
+        rel="stylesheet">
+</head>
+
+<body>
+    <div class="background-pattern"></div>
+    <div class="container">
+        <header>
+            <div class="logo">
+                <div class="logo-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 2L2 7l10 5 10-5-10-5z" />
+                        <path d="M2 17l10 5 10-5" />
+                        <path d="M2 12l10 5 10-5" />
+                    </svg>
+                </div>
+                <h1>ChurnGuard</h1>
+            </div>
+            <p class="tagline">AI-Powered Customer Retention Intelligence</p>
+        </header>
+
+        {% if result %}
+        <div class="result-card {% if result.is_churn %}churn{% else %}stay{% endif %}">
+            <div class="result-header">
+                <div class="result-icon">
+                    {% if result.is_churn %}
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10" />
+                        <path d="M15 9l-6 6M9 9l6 6" />
+                    </svg>
+                    {% else %}
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                        <polyline points="22 4 12 14.01 9 11.01" />
+                    </svg>
+                    {% endif %}
+                </div>
+                <h2>{{ result.prediction }}</h2>
+            </div>
+            <div class="probability-bars">
+                <div class="prob-item">
+                    <span class="prob-label">Churn Risk</span>
+                    <div class="prob-bar-container">
+                        <div class="prob-bar churn-bar" data-width="{{ result.churn_probability }}"></div>
+                    </div>
+                    <span class="prob-value">{{ result.churn_probability }}%</span>
+                </div>
+                <div class="prob-item">
+                    <span class="prob-label">Retention Likelihood</span>
+                    <div class="prob-bar-container">
+                        <div class="prob-bar stay-bar" data-width="{{ result.stay_probability }}"></div>
+                    </div>
+                    <span class="prob-value">{{ result.stay_probability }}%</span>
+                </div>
+            </div>
+            {% if result.is_churn %}
+            <div class="recommendation">
+                <h4>⚡ Recommended Actions</h4>
+                <ul>
+                    <li>Offer personalized retention discount</li>
+                    <li>Schedule customer success call</li>
+                    <li>Review service utilization patterns</li>
+                </ul>
+            </div>
+            {% endif %}
+        </div>
+        {% endif %}
+
+        <form action="/predict" method="POST" class="prediction-form">
+            <div class="form-section">
+                <h3><span class="section-number">01</span>Customer Demographics</h3>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="gender">Gender</label>
+                        <select name="gender" id="gender" required>
+                            <option value="Female" {% if form_data and form_data.gender=='Female' %}selected{% endif %}>
+                                Female</option>
+                            <option value="Male" {% if form_data and form_data.gender=='Male' %}selected{% endif %}>Male
+                            </option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="senior_citizen">Senior Citizen</label>
+                        <select name="senior_citizen" id="senior_citizen" required>
+                            <option value="0" {% if form_data and form_data.senior_citizen==0 %}selected{% endif %}>No
+                            </option>
+                            <option value="1" {% if form_data and form_data.senior_citizen==1 %}selected{% endif %}>Yes
+                            </option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="partner">Partner</label>
+                        <select name="partner" id="partner" required>
+                            <option value="No" {% if form_data and form_data.partner=='No' %}selected{% endif %}>No
+                            </option>
+                            <option value="Yes" {% if form_data and form_data.partner=='Yes' %}selected{% endif %}>Yes
+                            </option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="dependents">Dependents</label>
+                        <select name="dependents" id="dependents" required>
+                            <option value="No" {% if form_data and form_data.dependents=='No' %}selected{% endif %}>No
+                            </option>
+                            <option value="Yes" {% if form_data and form_data.dependents=='Yes' %}selected{% endif %}>
+                                Yes</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-section">
+                <h3><span class="section-number">02</span>Account Information</h3>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="tenure">Tenure (months)</label>
+                        <input type="number" name="tenure" id="tenure" min="0" max="72"
+                            value="{{ form_data.tenure if form_data else 12 }}" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="contract">Contract Type</label>
+                        <select name="contract" id="contract" required>
+                            <option value="Month-to-month" {% if form_data and form_data.contract=='Month-to-month'
+                                %}selected{% endif %}>Month-to-month</option>
+                            <option value="One year" {% if form_data and form_data.contract=='One year' %}selected{%
+                                endif %}>One year</option>
+                            <option value="Two year" {% if form_data and form_data.contract=='Two year' %}selected{%
+                                endif %}>Two year</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="paperless_billing">Paperless Billing</label>
+                        <select name="paperless_billing" id="paperless_billing" required>
+                            <option value="No" {% if form_data and form_data.paperless_billing=='No' %}selected{% endif
+                                %}>No</option>
+                            <option value="Yes" {% if form_data and form_data.paperless_billing=='Yes' %}selected{%
+                                endif %}>Yes</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="payment_method">Payment Method</label>
+                        <select name="payment_method" id="payment_method" required>
+                            <option value="Electronic check" {% if form_data and
+                                form_data.payment_method=='Electronic check' %}selected{% endif %}>Electronic check
+                            </option>
+                            <option value="Mailed check" {% if form_data and form_data.payment_method=='Mailed check'
+                                %}selected{% endif %}>Mailed check</option>
+                            <option value="Bank transfer (automatic)" {% if form_data and
+                                form_data.payment_method=='Bank transfer (automatic)' %}selected{% endif %}>Bank
+                                transfer (automatic)</option>
+                            <option value="Credit card (automatic)" {% if form_data and
+                                form_data.payment_method=='Credit card (automatic)' %}selected{% endif %}>Credit card
+                                (automatic)</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-section">
+                <h3><span class="section-number">03</span>Phone Services</h3>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="phone_service">Phone Service</label>
+                        <select name="phone_service" id="phone_service" required>
+                            <option value="No" {% if form_data and form_data.phone_service=='No' %}selected{% endif %}>
+                                No</option>
+                            <option value="Yes" {% if form_data and form_data.phone_service=='Yes' %}selected{% endif
+                                %}>Yes</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="multiple_lines">Multiple Lines</label>
+                        <select name="multiple_lines" id="multiple_lines" required>
+                            <option value="No phone service" {% if form_data and
+                                form_data.multiple_lines=='No phone service' %}selected{% endif %}>No phone service
+                            </option>
+                            <option value="No" {% if form_data and form_data.multiple_lines=='No' %}selected{% endif %}>
+                                No</option>
+                            <option value="Yes" {% if form_data and form_data.multiple_lines=='Yes' %}selected{% endif
+                                %}>Yes</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-section">
+                <h3><span class="section-number">04</span>Internet Services</h3>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="internet_service">Internet Service</label>
+                        <select name="internet_service" id="internet_service" required>
+                            <option value="No" {% if form_data and form_data.internet_service=='No' %}selected{% endif
+                                %}>No</option>
+                            <option value="DSL" {% if form_data and form_data.internet_service=='DSL' %}selected{% endif
+                                %}>DSL</option>
+                            <option value="Fiber optic" {% if form_data and form_data.internet_service=='Fiber optic'
+                                %}selected{% endif %}>Fiber optic</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="online_security">Online Security</label>
+                        <select name="online_security" id="online_security" required>
+                            <option value="No internet service" {% if form_data and
+                                form_data.online_security=='No internet service' %}selected{% endif %}>No internet
+                                service</option>
+                            <option value="No" {% if form_data and form_data.online_security=='No' %}selected{% endif
+                                %}>No</option>
+                            <option value="Yes" {% if form_data and form_data.online_security=='Yes' %}selected{% endif
+                                %}>Yes</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="online_backup">Online Backup</label>
+                        <select name="online_backup" id="online_backup" required>
+                            <option value="No internet service" {% if form_data and
+                                form_data.online_backup=='No internet service' %}selected{% endif %}>No internet service
+                            </option>
+                            <option value="No" {% if form_data and form_data.online_backup=='No' %}selected{% endif %}>
+                                No</option>
+                            <option value="Yes" {% if form_data and form_data.online_backup=='Yes' %}selected{% endif
+                                %}>Yes</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="device_protection">Device Protection</label>
+                        <select name="device_protection" id="device_protection" required>
+                            <option value="No internet service" {% if form_data and
+                                form_data.device_protection=='No internet service' %}selected{% endif %}>No internet
+                                service</option>
+                            <option value="No" {% if form_data and form_data.device_protection=='No' %}selected{% endif
+                                %}>No</option>
+                            <option value="Yes" {% if form_data and form_data.device_protection=='Yes' %}selected{%
+                                endif %}>Yes</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="tech_support">Tech Support</label>
+                        <select name="tech_support" id="tech_support" required>
+                            <option value="No internet service" {% if form_data and
+                                form_data.tech_support=='No internet service' %}selected{% endif %}>No internet service
+                            </option>
+                            <option value="No" {% if form_data and form_data.tech_support=='No' %}selected{% endif %}>No
+                            </option>
+                            <option value="Yes" {% if form_data and form_data.tech_support=='Yes' %}selected{% endif %}>
+                                Yes</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-section">
+                <h3><span class="section-number">05</span>Streaming Services</h3>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="streaming_tv">Streaming TV</label>
+                        <select name="streaming_tv" id="streaming_tv" required>
+                            <option value="No internet service" {% if form_data and
+                                form_data.streaming_tv=='No internet service' %}selected{% endif %}>No internet service
+                            </option>
+                            <option value="No" {% if form_data and form_data.streaming_tv=='No' %}selected{% endif %}>No
+                            </option>
+                            <option value="Yes" {% if form_data and form_data.streaming_tv=='Yes' %}selected{% endif %}>
+                                Yes</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="streaming_movies">Streaming Movies</label>
+                        <select name="streaming_movies" id="streaming_movies" required>
+                            <option value="No internet service" {% if form_data and
+                                form_data.streaming_movies=='No internet service' %}selected{% endif %}>No internet
+                                service</option>
+                            <option value="No" {% if form_data and form_data.streaming_movies=='No' %}selected{% endif
+                                %}>No</option>
+                            <option value="Yes" {% if form_data and form_data.streaming_movies=='Yes' %}selected{% endif
+                                %}>Yes</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-section">
+                <h3><span class="section-number">06</span>Billing Information</h3>
+                <div class="form-grid charges-grid">
+                    <div class="form-group">
+                        <label for="monthly_charges">Monthly Charges ($)</label>
+                        <input type="number" name="monthly_charges" id="monthly_charges" step="0.01" min="0" max="200"
+                            value="{{ form_data.monthly_charges if form_data else 70.00 }}" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="total_charges">Total Charges ($)</label>
+                        <input type="number" name="total_charges" id="total_charges" step="0.01" min="0" max="10000"
+                            value="{{ form_data.total_charges if form_data else 840.00 }}" required>
+                    </div>
+                </div>
+            </div>
+
+            <button type="submit" class="submit-btn">
+                <span>Analyze Churn Risk</span>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M5 12h14M12 5l7 7-7 7" />
+                </svg>
+            </button>
+        </form>
+
+        <footer>
+            <p>Powered by Machine Learning • Random Forest Classifier • ~80% Accuracy</p>
+        </footer>
+    </div>
+
+    <script>
+        // Add smooth animations on load
+        document.addEventListener('DOMContentLoaded', function () {
+            const sections = document.querySelectorAll('.form-section');
+            sections.forEach((section, index) => {
+                section.style.animationDelay = `${index * 0.1}s`;
+            });
+
+            // Animate result card if present
+            const resultCard = document.querySelector('.result-card');
+            if (resultCard) {
+                resultCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+
+            // Set probability bar widths from data attributes
+            const probBars = document.querySelectorAll('.prob-bar[data-width]');
+            probBars.forEach(bar => {
+                const width = bar.getAttribute('data-width');
+                bar.style.width = width + '%';
+            });
+        });
+    </script>
+</body>
+
+</html>
